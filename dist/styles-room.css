@@ -1,0 +1,521 @@
+/* ==========================================================================
+   经典对战房间布局 —— feat/room-classic-layout
+   素材：Gunny 原版 room.swf 经 FFDec 导出（dist/assets/room/）
+   坐标：boom_img/.../xml/xml/room.xml（asset.room.roomBg / RoomRightPropView /
+         BigMapInfoPanel / SmallMapInfoPanel / cancelButton / inviteButton ...）
+   舞台：原版约 1000×600，此处扩为 1000×690 以容纳中文版底部工具栏与刻度条。
+   仅作用于 .ddt-room.room-classic，不影响站点版战斗 HUD 与铁匠铺。
+   ========================================================================== */
+
+.ddt-layer.room-mode {
+  background: radial-gradient(ellipse at 50% 34%, #4a6b2c 0%, #24391a 52%, #0b1609 100%);
+  padding: 12px;
+}
+
+.ddt-room.room-classic,
+.ddt-layer .ddt-room.room-classic {
+  position: relative;
+  flex: none;
+  width: 1000px;
+  height: 690px;
+  max-height: none;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .7);
+  color: #f6e6c2;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", sans-serif;
+  transform: scale(var(--room-scale, 1));
+  transform-origin: center center;
+}
+
+/* 顶部竹木横梁 / 主木框九宫格 / 底部刻度条 -------------------------------- */
+.room-beam {
+  position: absolute; inset: 0 0 auto 0; height: 34px;
+  background: url("assets/room/frame-tc.png") repeat-x left top / auto 100%,
+              linear-gradient(180deg, #6b3f14, #8a5620 45%, #4a2a0c);
+  border-bottom: 3px solid #2c1808;
+  box-shadow: inset 0 2px 0 rgba(255, 215, 140, .35), 0 3px 8px rgba(0, 0, 0, .6);
+}
+.room-beam::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 3px;
+  background: repeating-linear-gradient(90deg, rgba(255, 220, 150, .28) 0 42px, transparent 42px 96px);
+}
+.room-shell {
+  position: absolute; left: 12px; right: 12px; top: 28px; bottom: 24px;
+  border: 16px solid transparent;
+  border-image: url("assets/room/room-frame.png") 40 fill / 16px / 0 repeat;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.room-ruler {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 22px;
+  background: linear-gradient(180deg, #7ba63c, #3e6b1d 55%, #26440f);
+  border-top: 2px solid #d8e88a;
+  color: #e8f7b8; font: 700 11px/1 ui-monospace, Menlo, monospace;
+  text-shadow: 0 1px 2px #12280a;
+}
+.room-ruler span { flex: 1; text-align: center; }
+
+/* 通用描边金字 ------------------------------------------------------------ */
+.room-gold {
+  color: #ffe08a;
+  text-shadow: 0 1px 0 #452200, 0 -1px 0 #452200, 1px 0 0 #452200, -1px 0 0 #452200,
+               0 2px 5px rgba(0, 0, 0, .8);
+}
+.room-ink {
+  color: #f7e9c8;
+  text-shadow: 0 1px 0 #2b1606, 0 2px 4px rgba(0, 0, 0, .8);
+}
+
+/* 左侧 2×2 玩家位（room.xml: asset.room.roomBg 408×425, x=8 y=5） ---------- */
+.room-seats {
+  position: absolute; left: 28px; top: 50px; width: 388px; height: 420px;
+  display: grid; grid-template-columns: repeat(2, 170px);
+  grid-auto-rows: 203px; gap: 10px;
+  justify-content: center; align-content: center;
+  border-radius: 8px;
+  background: rgba(58, 33, 12, .32);
+  box-shadow: inset 0 0 0 3px rgba(60, 34, 12, .85), inset 0 0 18px rgba(0, 0, 0, .55);
+}
+.room-seat {
+  position: relative; width: 170px; height: 203px; overflow: hidden;
+  border-radius: 9px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, .5);
+}
+.room-seat-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-seat-caption {
+  position: absolute; left: 0; right: 0; bottom: 9px;
+  text-align: center; font-size: 15px; font-weight: 700; letter-spacing: 2px;
+  color: #4a2a10;
+  text-shadow: 0 1px 0 rgba(255, 245, 210, .85), 0 0 3px rgba(255, 240, 200, .9);
+}
+.room-seat.is-closed .room-seat-caption { color: #8a7a5e; }
+.room-seat-kbd {
+  position: absolute; top: 2px; font: 700 11px/1 ui-monospace, Menlo, monospace;
+  color: #fff3b0; text-shadow: 0 1px 2px #000;
+}
+
+/* 房主位：红金框 + 圆形头像 + 徽记 */
+.room-seat.is-host { background: #5e3412; }
+.room-seat-host-top {
+  position: absolute; left: 6px; right: 6px; top: 5px; height: 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; color: #ffe9ad; text-shadow: 0 1px 2px #2b1200;
+}
+.room-seat-guild { opacity: .92; }
+.room-seat-icons { letter-spacing: 2px; font-size: 11px; }
+.room-seat-avatar {
+  position: absolute; left: 50%; top: 26px; transform: translateX(-50%);
+  width: 116px; height: 116px; border-radius: 50%;
+  border: 4px solid #b8221c;
+  box-shadow: 0 0 0 3px #f0c25a, 0 0 12px rgba(255, 190, 60, .7), inset 0 0 18px rgba(0, 0, 0, .5);
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, #6b4a2a, #2b1a0c);
+}
+.room-seat-avatar img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.22); }
+.room-seat-name {
+  position: absolute; left: 0; right: 0; top: 143px; text-align: center;
+  font-size: 14px; font-weight: 700; color: #fff0c0;
+  text-shadow: 0 1px 0 #3a1c00, 0 2px 4px rgba(0, 0, 0, .9);
+}
+.room-seat-lv {
+  position: absolute; right: 6px; bottom: 6px;
+  font: 700 12px/1 ui-monospace, Menlo, monospace;
+  color: #ffe36a; text-shadow: 0 1px 0 #3a1c00, 1px 0 0 #3a1c00, -1px 0 0 #3a1c00;
+}
+.room-seat-host {
+  position: absolute; left: 6px; bottom: 6px;
+  padding: 2px 8px; border-radius: 4px;
+  background: linear-gradient(180deg, #d63a22, #8e1c0c);
+  border: 1px solid #ffcf7a; font-size: 11px; font-weight: 700; color: #fff4d0;
+}
+.room-seat-equip { position: absolute; left: 0; right: 0; top: 165px; text-align: center; }
+.room-seat-equip .ddt-equipped-name {
+  font-size: 10px; font-weight: 700; color: #ffdf8e; text-shadow: 0 1px 2px #2b1200;
+}
+.room-seat-equip .ddt-equipped-name span { color: #fff; }
+.room-seat-equip .ddt-attr,
+.room-seat-equip .ddt-label { display: none; }
+
+/* 中间撮合大图（room.xml: bigMapInfoPanel x=418 y=5） --------------------- */
+.room-match {
+  position: absolute; left: 428px; top: 50px; width: 316px; height: 420px;
+  border-radius: 10px; overflow: hidden;
+  border: 3px solid #4a2a0e;
+  box-shadow: 0 0 0 2px rgba(255, 210, 130, .45), 0 6px 16px rgba(0, 0, 0, .6);
+  background: #2b1a0c;
+}
+.room-match-art { width: 100%; height: 100%; object-fit: fill; display: block; }
+.room-match-bar {
+  position: absolute; left: 5px; right: 5px; bottom: 6px; height: 76px;
+  border: 2px solid rgba(190, 170, 130, .75); border-radius: 7px;
+  background: linear-gradient(180deg, rgba(28, 24, 20, .9), rgba(12, 12, 12, .94));
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, .8);
+}
+.room-free-box { position: absolute; left: 8px; top: 5px; width: 62px; text-align: center; }
+.room-free-box img { width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 4px #000); }
+.room-free-box b {
+  display: block; margin-top: -3px; font-size: 12px; color: #ffe36a;
+  text-shadow: 0 1px 2px #000;
+}
+.room-count {
+  position: absolute; right: 16px; top: 3px;
+  font: 700 34px/1 "Arial Black", Arial, sans-serif;
+  color: #ffe36a; letter-spacing: 4px;
+  text-shadow: 0 2px 0 #7a4a00, 0 3px 8px rgba(0, 0, 0, .9);
+}
+.room-matching {
+  position: absolute; left: 76px; right: 12px; bottom: 9px; text-align: center;
+  font-size: 14px; letter-spacing: 2px; color: #e8e2d2;
+  text-shadow: 0 1px 3px #000;
+}
+
+/* 右侧：房间标题 / 道具栏 / 邀请与开始（room.xml: x=762） ------------------ */
+.room-head {
+  position: absolute; left: 756px; top: 40px; width: 232px; height: 62px;
+}
+.room-head-title {
+  display: flex; align-items: baseline; gap: 4px;
+  font-size: 20px; font-weight: 700; color: #3a230c;
+  text-shadow: 0 1px 0 rgba(255, 226, 160, .8), 0 2px 3px rgba(0, 0, 0, .5);
+}
+.room-head-title b { font-size: 24px; color: #2c1a08; }
+.room-head-title .room-channel {
+  margin-left: auto; padding: 2px 8px; border-radius: 10px;
+  background: linear-gradient(180deg, #d8a63a, #9a6a12);
+  border: 1px solid #ffe6a0; font-size: 11px; font-weight: 700; color: #3a2405;
+  text-shadow: none;
+}
+.room-slogan {
+  margin-top: 3px; padding: 3px 10px; border-radius: 12px;
+  background: linear-gradient(180deg, rgba(214, 160, 46, .95), rgba(150, 100, 18, .95));
+  border: 1px solid #ffe39a;
+  font-size: 12px; font-weight: 700; color: #3d2505; text-align: center;
+  box-shadow: inset 0 1px 0 rgba(255, 244, 190, .8);
+}
+/* 原版 roomGoldText (room.xml x=190 y=361)：金币/材料放在房间信息面板内 */
+.room-mapinfo .ddt-wallet {
+  position: absolute; left: 116px; top: 58px; display: flex; gap: 3px;
+}
+.room-mapinfo .ddt-chip {
+  align-items: center; padding: 1px 4px; border-radius: 6px; gap: 2px;
+  background: rgba(52, 30, 10, .82); border: 1px solid #c99a42;
+}
+.room-mapinfo .ddt-chip img { width: 12px; height: 12px; }
+.room-mapinfo .ddt-chip b { font-size: 10px; color: #ffd86a; }
+.room-mapinfo .ddt-chip small { display: none; }
+
+.room-props {
+  position: absolute; left: 756px; top: 100px; width: 232px; height: 390px;
+}
+.room-props-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.room-props-title {
+  position: absolute; left: 16px; right: 12px; height: 24px; line-height: 24px;
+  font-size: 15px; font-weight: 700; letter-spacing: 1px;
+  color: #ffe08a;
+  text-shadow: 0 1px 0 #452200, 0 -1px 0 #452200, 1px 0 0 #452200, -1px 0 0 #452200,
+               0 2px 5px rgba(0, 0, 0, .8);
+  pointer-events: none;
+}
+.room-props-title.t1 { top: 62px; }
+.room-props-title.t2 { top: 152px; }
+.room-props-title.t3 { top: 302px; }
+.room-props-title::before,
+.room-props-title::after {
+  content: "❖"; font-size: 11px; color: #f6c65a; margin: 0 4px;
+}
+
+/* 贴身道具 3 格（Z/X/C） */
+.room-cells-3 {
+  position: absolute; left: 26px; top: 92px; width: 184px; height: 54px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.room-cells-3 .ddt-label { display: none; }
+.room-cells-3 .ddt-mat-row {
+  display: contents;
+}
+.room-cells-3 .ddt-mat {
+  position: relative; display: block; height: 52px;
+  background: url("assets/room/prop-cell.png") center / 100% 100% no-repeat;
+  border-radius: 6px; cursor: pointer;
+}
+.room-cells-3 .ddt-mat img {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 30px; height: 30px; object-fit: contain;
+}
+.room-cells-3 .ddt-mat b {
+  position: absolute; right: 2px; bottom: 0; font-size: 9px; color: #ffe08a;
+  text-shadow: 0 1px 2px #000;
+}
+.room-cells-3 .ddt-mat small { display: none; }
+/* 原版贴身道具快捷键 Z / X / C */
+.room-cells-3 .ddt-mat::before {
+  content: "Z"; position: absolute; left: -1px; top: -7px; z-index: 2;
+  font: 700 10px/1 ui-monospace, Menlo, monospace;
+  color: #fff6c0; text-shadow: 0 1px 2px #000;
+}
+.room-cells-3 .ddt-mat-row > .ddt-mat:nth-child(2)::before { content: "X"; }
+.room-cells-3 .ddt-mat-row > .ddt-mat:nth-child(3)::before { content: "C"; }
+.room-cell-kbd {
+  position: absolute; left: -2px; top: -6px; z-index: 2;
+  font: 700 10px/1 ui-monospace, Menlo, monospace;
+  color: #fff6c0; text-shadow: 0 1px 2px #000;
+}
+
+/* 战斗道具箱 2×4（复用 ddtWeaponList，保留 data-action="weapon"） */
+.room-cells-8 {
+  position: absolute; left: 24px; top: 182px; width: 188px; height: 112px;
+  overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: thin; scrollbar-color: #a9772c transparent;
+}
+.room-cells-8 .ddt-label { display: none; }
+.room-cells-8 .ddt-weapon-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+}
+.room-cells-8 .ddt-weapon {
+  position: relative; height: 50px; padding: 0; overflow: hidden;
+  background: url("assets/room/prop-cell.png") center / 100% 100% no-repeat;
+  border: 0; border-radius: 0; color: #ffe9b0; cursor: pointer;
+  font-size: 9px; line-height: 50px; text-align: center;
+  text-shadow: 0 1px 2px #000;
+}
+.room-cells-8 .ddt-weapon.is-active {
+  outline: 2px solid #ffd45a; outline-offset: -2px;
+  background-image: url("assets/room/prop-cell-over.png");
+}
+.room-cells-8 .ddt-weapon img {
+  position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+  width: 32px; height: 32px; object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .8));
+}
+.room-cells-8 .ddt-weapon span {
+  position: absolute; left: 1px; right: 1px; bottom: 1px;
+  font-size: 8px; line-height: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: #ffe9b0; text-shadow: 0 1px 2px #000;
+}
+.room-cells-8 .ddt-weapon small { position: absolute; right: 2px; top: 0; font-size: 8px; color: #ffd45a; }
+.room-cell-qty {
+  position: absolute; left: 2px; bottom: 0; font-size: 9px; color: #fff0a0;
+  text-shadow: 0 1px 2px #000; pointer-events: none;
+}
+.room-viewer-x {
+  position: absolute; left: 50%; top: 340px; transform: translateX(-50%);
+  width: 150px; height: 48px; border-radius: 6px;
+  background: linear-gradient(180deg, #6b3d17, #3a2110);
+  border: 2px solid #2a1708;
+  box-shadow: inset 0 1px 0 rgba(255, 210, 140, .35), inset 0 -3px 8px rgba(0, 0, 0, .6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 700; color: #201206;
+  text-shadow: 0 1px 0 rgba(255, 210, 140, .35);
+}
+
+/* 邀请 / 跨区 / 开始（原版 cancelBtnAsset 位置） */
+.room-actions { position: absolute; left: 756px; top: 452px; width: 232px; height: 160px; }
+.room-mini-btn {
+  position: absolute; top: 46px; width: 56px; padding: 0;
+  background: none; border: 0; cursor: pointer; text-align: center;
+  color: #ece0c0; font-size: 12px; font-weight: 700;
+  text-shadow: 0 1px 0 #2b1606, 0 2px 4px #000;
+}
+.room-mini-btn img { width: 42px; height: 52px; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .7)); }
+.room-mini-btn span { display: block; margin-top: -2px; }
+.room-mini-btn.invite { left: 2px; }
+.room-mini-btn.cross { left: 62px; }
+.room-start {
+  position: absolute; right: -4px; top: -6px; width: 112px; height: 132px;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, .7));
+}
+.room-star {
+  position: absolute; inset: 0;
+  clip-path: polygon(50% 0%, 60% 20%, 76% 6%, 76% 30%, 96% 26%, 84% 45%, 100% 56%,
+                     80% 62%, 88% 86%, 64% 76%, 58% 100%, 44% 84%, 22% 96%, 24% 72%,
+                     2% 66%, 16% 48%, 0% 30%, 22% 30%, 24% 8%, 40% 22%);
+  background: radial-gradient(circle at 50% 46%, #fff8b0 0%, #ffd43c 45%, #f39a12 78%, #c96a05 100%);
+}
+.room-star::after {
+  content: ""; position: absolute; inset: 10%;
+  clip-path: inherit;
+  background: radial-gradient(circle at 50% 46%, #fffbe0 0%, #ffe45c 60%, transparent 100%);
+}
+.room-start-label {
+  position: absolute; left: 0; right: 0; bottom: 16px; text-align: center;
+  font-size: 28px; font-weight: 900; letter-spacing: 2px;
+  color: #2b1400;
+  -webkit-text-stroke: 3px #fff2b0;
+  paint-order: stroke fill;
+  text-shadow: 0 3px 5px rgba(0, 0, 0, .7);
+}
+.room-start:hover .room-star { filter: brightness(1.12); }
+.room-start:active { transform: translateY(2px); }
+.room-start-tip {
+  position: absolute; right: 0; top: 128px; width: 112px; text-align: center;
+  font-size: 10px; color: #ffe9a8; text-shadow: 0 1px 2px #000;
+}
+.room-bot {
+  position: absolute; left: 0; top: 112px; width: 120px;
+  font-size: 10px; line-height: 1.5; color: #e9dab4;
+  text-shadow: 0 1px 2px #000;
+}
+.room-bot .ddt-label { display: none; }
+.room-bot img { width: 22px; height: 22px; vertical-align: middle; }
+.room-bot b { font-size: 11px; color: #ffd45a; }
+.room-bot small { display: block; font-size: 9px; color: #cdbb96; }
+.room-cards {
+  position: absolute; left: 0; top: 140px; width: 120px; height: 22px;
+  border-radius: 6px; border: 1px solid #ffd45a;
+  background: linear-gradient(180deg, #8a5a1c, #4a2c0c);
+  color: #fff0c0; font-size: 10px; cursor: pointer;
+}
+
+/* 左下聊天框 ------------------------------------------------------------- */
+.room-chat {
+  position: absolute; left: 22px; top: 482px; width: 470px; height: 158px;
+  border: 3px solid #4a3016; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(243, 231, 202, .94), rgba(226, 208, 170, .94));
+  box-shadow: inset 0 0 0 2px rgba(255, 244, 210, .55), 0 4px 12px rgba(0, 0, 0, .55);
+  color: #3a2a14; overflow: hidden;
+}
+.room-chat-log {
+  position: absolute; left: 8px; right: 42px; top: 6px; height: 108px;
+  overflow: hidden; font-size: 11px; line-height: 1.65;
+}
+.room-chat-log p { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-chat-log .sys { color: #6a4a18; }
+.room-chat-log .gift { color: #a04a10; }
+.room-chat-tabs {
+  position: absolute; right: 5px; top: 5px; width: 30px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.room-chat-tabs span {
+  padding: 6px 2px; border-radius: 4px; text-align: center;
+  font-size: 10px; line-height: 1.2; color: #4a3418;
+  background: rgba(150, 116, 62, .18); border: 1px solid rgba(90, 60, 20, .3);
+}
+.room-chat-tabs span.is-active { background: #8a6224; color: #fff2c8; }
+.room-chat-input {
+  position: absolute; left: 8px; right: 8px; bottom: 6px; height: 26px;
+  display: flex; align-items: center; gap: 5px;
+  border: 2px solid #4a3016; border-radius: 4px;
+  background: linear-gradient(180deg, #2c2a26, #141310);
+}
+.room-chat-input b {
+  padding: 0 8px; height: 100%; display: flex; align-items: center;
+  font-size: 11px; color: #ffe08a; border-right: 1px solid #5a4520;
+}
+.room-chat-input i { flex: 1; }
+.room-chat-input em {
+  font-style: normal; font-size: 13px; color: #d8c9a4; padding: 0 5px;
+}
+.room-materials {
+  position: absolute; left: 8px; right: 42px; bottom: 36px; height: 20px;
+  display: flex; align-items: center; gap: 6px; overflow: hidden;
+  font-size: 9px; color: #5a421c;
+}
+
+/* 中下房间信息与地图预览（room.xml: smallMapInfoPanel x=505 y=425） ------- */
+.room-mapinfo {
+  position: absolute; left: 500px; top: 482px; width: 244px; height: 122px;
+  background: url("assets/room/map-info.png") center / 100% 100% no-repeat;
+}
+.room-mapinfo-title {
+  position: absolute; left: 0; right: 0; top: 3px; text-align: center;
+  font-size: 13px; font-weight: 700; color: #ffe08a;
+  text-shadow: 0 1px 0 #452200, 0 2px 4px rgba(0, 0, 0, .9);
+}
+.room-map-thumb {
+  position: absolute; left: 14px; top: 26px; width: 96px; height: 64px;
+  padding: 0; border: 2px solid #6a4318; border-radius: 4px; overflow: hidden;
+  background: #2b1a0c; cursor: pointer;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, .7);
+}
+.room-map-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.room-map-badge {
+  position: absolute; left: 52px; top: 34px;
+  transform: rotate(-12deg); padding: 2px 6px; border-radius: 3px;
+  background: #c0341c; border: 1px solid #ffd88a; color: #fff2c0;
+  font-size: 11px; font-weight: 700; pointer-events: none;
+}
+.room-map-name {
+  position: absolute; left: 118px; top: 32px; width: 118px;
+  font-size: 14px; font-weight: 700; color: #3a2408;
+  text-shadow: 0 1px 0 rgba(255, 240, 190, .8); text-align: center;
+}
+.room-map-time {
+  position: absolute; left: 20px; bottom: 8px;
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 700; color: #4a2c0c;
+}
+.room-map-time img { width: 34px; height: 15px; object-fit: contain; }
+.room-map-trait {
+  position: absolute; right: 10px; bottom: 8px; font-size: 10px; color: #5a3c18;
+}
+.room-map-picker {
+  position: absolute; left: 500px; top: 350px; width: 244px; max-height: 246px;
+  overflow-y: auto; z-index: 30; padding: 6px;
+  border: 3px solid #8a5a24; border-radius: 8px;
+  background: rgba(44, 26, 10, .97);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .8);
+}
+.room-map-picker .ddt-map-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
+}
+.room-map-picker .ddt-map {
+  padding: 0; border: 2px solid #6a4318; border-radius: 5px; overflow: hidden;
+  background: #2b1a0c; cursor: pointer;
+}
+.room-map-picker .ddt-map img { height: 36px; }
+.room-map-picker .ddt-map span { font-size: 9px; color: #ffe08a; padding: 2px 3px 0; }
+.room-map-picker .ddt-map small { display: none; }
+.room-map-picker .ddt-map.is-active { border-color: #ffd45a; }
+.room-map-picker-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px; font-size: 12px; color: #ffe08a;
+}
+.room-map-picker-head button {
+  border: 0; background: none; color: #fff0c0; font-size: 16px; cursor: pointer;
+}
+
+/* 底部功能条 -------------------------------------------------------------- */
+.room-footbar {
+  position: absolute; left: 495px; top: 616px; width: 493px; height: 48px;
+  display: flex; align-items: center; justify-content: flex-end; gap: 3px;
+}
+.room-tool {
+  width: 52px; height: 46px; padding: 0; border: 0; background: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer;
+  color: #f0e2bf; font-size: 11px; font-weight: 700;
+  text-shadow: 0 1px 0 #2b1606, 0 2px 4px rgba(0, 0, 0, .9);
+}
+.room-tool i {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px; font-style: normal;
+  font-size: 13px; font-weight: 700; color: #3a2308;
+  background: linear-gradient(180deg, #f3d88f, #c99a42);
+  border: 2px solid #6a4318;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 230, .8), 0 2px 4px rgba(0, 0, 0, .6);
+}
+.room-tool:nth-child(3n+2) i { background: linear-gradient(180deg, #bfe0f0, #6aa5c8); }
+.room-tool:nth-child(3n+3) i { background: linear-gradient(180deg, #e8c0a0, #b87a4a); }
+.room-tool:hover i { filter: brightness(1.15); transform: translateY(-1px); }
+.room-tool.is-action i { background: linear-gradient(180deg, #ffe08a, #e0a02a); }
+
+/* 状态文字（沿用 ddtStatus） --------------------------------------------- */
+/* 状态条放在聊天框下方，避免遮挡底部功能按钮的点击区域 */
+.room-status {
+  position: absolute; left: 22px; top: 642px; width: 470px; height: 22px;
+  font-size: 10px; line-height: 22px; color: #ffe6a8;
+  text-shadow: 0 1px 2px #000;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.room-status.is-alert { color: #ff9a7a; }
+
+/* 铁匠铺覆盖层在新房间布局下仍居中显示 ------------------------------------ */
+.ddt-layer.room-mode .ddt-forge { z-index: 10; }

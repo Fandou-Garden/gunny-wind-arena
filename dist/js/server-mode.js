@@ -49,6 +49,12 @@ function stoneTotal(wallet) {
   return (wallet?.items || []).reduce((sum, i) => sum + Number(i.quantity || 0), 0);
 }
 
+/** dist/assets/weapon-*.png 中确实存在的图标；翻牌奖励武器无对应图，只显示文字。 */
+const ROOM_WEAPON_ICONS = new Set([
+  'appliance', 'axe', 'bow', 'brick', 'cannon', 'fire', 'fruit', 'goldgun',
+  'gun', 'scalpel', 'thunder', 'toilet', 'wind', 'bazooka3',
+]);
+
 /** 顶部钱包 chip 始终显示服务端余额（刷新/重启后一致）。 */
 export function paintWalletChips(wallet) {
   if (!wallet) return;
@@ -68,42 +74,140 @@ function buildLayer() {
   layer.id = 'ddtServerLayer';
   layer.className = 'ddt-layer';
   layer.innerHTML = `
-    <section class="ddt-room" id="ddtRoom" aria-label="个人房间">
-      <img class="ddt-room-bg" src="assets/ui/load-bg.jpg?v=33" alt="" draggable="false">
-      <div class="ddt-room-shade"></div>
-      <header class="ddt-room-head">
-        <div>
-          <h1>个人房间 <span class="ddt-badge">服务端版</span></h1>
-          <p>原版 room.swf 背景素材 · 房间布局为服务端版新增（非原版房间界面）</p>
-        </div>
-        <div class="ddt-wallet" id="ddtWallet"></div>
-      </header>
-      <div class="ddt-room-grid">
-        <section class="ddt-panel ddt-player-panel">
-          <div class="ddt-portrait">
-            <img class="ddt-portrait-bg" src="assets/ui/load-char-blue.png?v=33" alt="" draggable="false">
-            <img class="ddt-portrait-figure" src="assets/ui/hero-figure.png?v=33" alt="玩家角色" draggable="false">
-          </div>
-          <h2 id="ddtPlayerName">本地玩家</h2>
-          <div class="ddt-equipped" id="ddtEquipped"></div>
-          <div class="ddt-materials" id="ddtMaterials"></div>
-        </section>
-        <section class="ddt-panel ddt-map-panel">
-          <div class="ddt-panel-title"><img src="assets/ui/load-field.png?v=33" alt=""><span>选择地图</span></div>
-          <div class="ddt-map-grid" id="ddtMapGrid"></div>
-          <p class="ddt-hint">点击地图后按需加载该地图资源；其余地图仅显示缩略图。</p>
-        </section>
-        <section class="ddt-panel ddt-action-panel">
-          <div class="ddt-bot" id="ddtBot"></div>
-          <div class="ddt-weapon-list" id="ddtWeaponList"></div>
-          <div class="ddt-actions">
-            <button class="ddt-btn ddt-btn-forge" type="button" data-action="open-forge">铁匠铺 · 强化武器</button>
-            <button class="ddt-btn ddt-btn-continue" type="button" data-action="continue-cards" hidden>继续翻牌</button>
-            <button class="ddt-btn ddt-btn-start" type="button" data-action="start-battle">开始战斗</button>
-          </div>
-          <p class="ddt-status" id="ddtStatus"></p>
-        </section>
+    <!-- 经典对战房间：布局按 Gunny room.xml 组件坐标 + 用户提供的原版截图。
+         素材为 room.swf 经 FFDec 导出（dist/assets/room/），越南语文案已擦除并改为中文 DOM。
+         全部原有 id / data-action 保留，房间/铁匠铺/战斗的数据流不变。 -->
+    <section class="ddt-room room-classic" id="ddtRoom" aria-label="对战房间">
+      <div class="room-beam"></div>
+      <div class="room-shell"></div>
+      <div class="room-ruler">
+        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+        <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
       </div>
+
+      <!-- 左侧 2×2 玩家位（room.xml: asset.room.roomBg 408×425） -->
+      <div class="room-seats">
+        <div class="room-seat is-host">
+          <img class="room-seat-bg" src="assets/room/seat-red.png?v=35" alt="">
+          <div class="room-seat-host-top">
+            <span class="room-seat-guild">公会 · 风场弹道</span>
+            <span class="room-seat-icons">VIP</span>
+          </div>
+          <div class="room-seat-avatar"><img src="assets/portrait-player.png?v=35" alt="玩家头像"></div>
+          <div class="room-seat-name" id="ddtPlayerName">本地玩家</div>
+          <div class="room-seat-equip" id="ddtEquipped"></div>
+          <span class="room-seat-lv">Lv44</span>
+          <span class="room-seat-host">房主</span>
+        </div>
+        <div class="room-seat is-closed">
+          <img class="room-seat-bg" src="assets/room/seat-closed.png?v=35" alt="">
+          <span class="room-seat-caption">点击关闭</span>
+        </div>
+        <div class="room-seat">
+          <img class="room-seat-bg" src="assets/room/seat-open.png?v=35" alt="">
+          <span class="room-seat-caption">点击开启</span>
+        </div>
+        <div class="room-seat">
+          <img class="room-seat-bg" src="assets/room/seat-open.png?v=35" alt="">
+          <span class="room-seat-caption">点击开启</span>
+        </div>
+      </div>
+
+      <!-- 中间撮合大图（room.xml: matchRoomBigMapInfoPanel x=418 y=5） -->
+      <div class="room-match">
+        <img class="room-match-art" src="assets/room/match-preview.png?v=35" alt="战斗预告">
+        <div class="room-match-bar">
+          <div class="room-free-box"><img src="assets/room/icon-free.png?v=35" alt=""><b>自由战</b></div>
+          <b class="room-count" id="roomCount">03</b>
+          <span class="room-matching">撮合中，请等待…</span>
+        </div>
+      </div>
+
+      <!-- 右侧房间标题（room.xml: roomIDText / roomChanelNameText / roomNameText） -->
+      <div class="room-head">
+        <div class="room-head-title">房间 <b>5</b><span class="room-channel">第一频道</span></div>
+        <div class="room-slogan">挑战极限，欢乐无边!</div>
+      </div>
+
+      <!-- 右侧道具栏（room.xml: RoomRightPropView x=762 y=15；upCellsContainer / downCellsContainer） -->
+      <div class="room-props">
+        <img class="room-props-bg" src="assets/room/right-props.png?v=35" alt="">
+        <div class="room-props-title t1">贴身道具</div>
+        <div class="room-cells-3" id="ddtMaterials"></div>
+        <div class="room-props-title t2">战斗道具箱</div>
+        <div class="room-cells-8" id="ddtWeaponList"></div>
+        <div class="room-props-title t3">观战</div>
+        <div class="room-viewer-x">×</div>
+      </div>
+
+      <!-- 邀请 / 跨区 / 开始（原版 cancelBtnAsset 位，改为开始战斗入口） -->
+      <div class="room-actions">
+        <button class="room-mini-btn invite" type="button" data-action="room-tip"
+                data-tip="邀请好友：服务端单机版暂未接入多人房间">
+          <img src="assets/room/btn-invite.png?v=35" alt=""><span>邀请</span></button>
+        <button class="room-mini-btn cross" type="button" data-action="room-tip"
+                data-tip="跨区：服务端单机版暂未接入跨区匹配">
+          <img src="assets/room/btn-crosszone.png?v=35" alt=""><span>跨区</span></button>
+        <button class="room-start" type="button" data-action="start-battle" title="开始战斗" aria-label="开始战斗">
+          <span class="room-star"></span><span class="room-start-label">开始</span>
+        </button>
+        <span class="room-start-tip">进入战斗</span>
+        <div class="room-bot" id="ddtBot"></div>
+        <button class="room-cards ddt-btn ddt-btn-continue" type="button"
+                data-action="continue-cards" hidden>继续翻牌</button>
+      </div>
+
+      <!-- 左下聊天框 -->
+      <div class="room-chat">
+        <div class="room-chat-log">
+          <p class="sys">[当前] 欢迎来到风场弹道对战房间</p>
+          <p class="sys">[当前] 熊取天：在撮合</p>
+          <p>[当前] 无味布布：在的</p>
+          <p class="gift">[当前] 天马行空：欢迎</p>
+          <p>您获得了 550 金币</p>
+          <p class="sys">好友 [火小鸡] 上线了</p>
+        </div>
+        <div class="room-chat-tabs">
+          <span class="is-active">当前</span><span>公会</span><span>私人</span>
+        </div>
+        <div class="room-chat-input"><b>当前</b><i></i><em>发送</em><em>表情</em></div>
+      </div>
+
+      <!-- 中下房间信息（room.xml: matchRoomSmallMapInfoPanel x=505 y=425） -->
+      <div class="room-mapinfo">
+        <div class="room-mapinfo-title">房间信息</div>
+        <button class="room-map-thumb" type="button" data-action="toggle-map-picker" title="点击选择地图">
+          <img id="roomMapThumb" src="assets/map-1156-thumb.jpg?v=35" alt="当前地图">
+        </button>
+        <span class="room-map-badge">全部</span>
+        <div class="room-map-name" id="roomMapName">随机地图</div>
+        <div class="room-map-time"><img src="assets/room/time-10s.png?v=35" alt="">10 秒</div>
+        <div class="room-map-trait" id="roomMapTrait">原版 · 竞技主场</div>
+        <!-- 原版 roomGoldText (room.xml x=190 y=361) 对应房间钱包 -->
+        <div class="ddt-wallet" id="ddtWallet"></div>
+      </div>
+      <div class="room-map-picker" id="roomMapPicker" hidden>
+        <div class="room-map-picker-head">
+          <b>选择地图</b>
+          <button type="button" data-action="close-map-picker" aria-label="关闭地图选择">×</button>
+        </div>
+        <div class="ddt-map-grid" id="ddtMapGrid"></div>
+      </div>
+
+      <!-- 底部功能条（原版 RoomToolBar 9 个按钮；背包接入铁匠铺） -->
+      <div class="room-footbar">
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="充值：服务端单机版暂未接入商城"><i>充</i>充值</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="商城：服务端单机版暂未接入商城"><i>商</i>商城</button>
+        <button class="room-tool is-action" type="button" data-action="open-forge" title="打开铁匠铺"><i>包</i>背包</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="邮件：服务端单机版暂未接入邮件"><i>邮</i>邮件</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="任务：服务端单机版暂未接入任务"><i>任</i>任务</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="社交：服务端单机版暂未接入好友"><i>社</i>社交</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="签到：服务端单机版暂未接入签到"><i>签</i>签到</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="更多：暂无额外功能"><i>多</i>更多</button>
+        <button class="room-tool" type="button" data-action="room-tip" data-tip="返回：从战斗结算返回房间即可"><i>返</i>返回</button>
+      </div>
+
+      <p class="ddt-status room-status" id="ddtStatus"></p>
     </section>
 
     <section class="ddt-forge" id="ddtForge" aria-label="铁匠铺" hidden>
@@ -197,6 +301,16 @@ function buildLayer() {
     setStatus(`已拖入 ${def.label}：${payload.key}`);
   });
 
+  fitRoom();
+  window.addEventListener('resize', fitRoom);
+}
+
+/** 原版房间舞台约 1000×600，此处为 1000×690；按视口等比缩放保证完整可见。 */
+function fitRoom() {
+  const el = $('ddtRoom');
+  if (!el || !el.classList.contains('room-classic')) return;
+  const scale = Math.min(1, (window.innerWidth - 24) / 1000, (window.innerHeight - 24) / 690);
+  el.style.setProperty('--room-scale', String(Math.max(0.28, scale)));
 }
 
 function renderRoom(room) {
@@ -214,9 +328,10 @@ function renderRoom(room) {
     <div class="ddt-equipped-name">${esc(room.equipped.label)} <span>+${room.equipped.level}</span></div>
     <div class="ddt-attr">基础伤害 ${fmt(room.equipped.attackPrecise ?? room.equipped.attack)} · 强化等级 +${room.equipped.level}</div>`;
 
+  // 原版「贴身道具」只有 3 格（Z/X/C），只取前三种材料；完整背包仍在铁匠铺里。
   $('ddtMaterials').innerHTML = `
     <div class="ddt-label">主要材料</div>
-    <div class="ddt-mat-row">${room.wallet.items.map((i) => `
+    <div class="ddt-mat-row">${room.wallet.items.slice(0, 3).map((i) => `
       <span class="ddt-mat" title="TemplateID ${i.templateId ?? '—'}">
         <img src="${esc(i.icon)}?v=33" alt="" draggable="false"><b>${fmt(i.quantity)}</b><small>${esc(i.name)}</small>
       </span>`).join('')}</div>`;
@@ -234,12 +349,16 @@ function renderRoom(room) {
       <div><b>${esc(room.bot.label)}</b><small>角度 ${room.bot.angle}° · 力度 ${room.bot.force} · 攻击倍率 ${room.bot.attackScale}</small>
       <small>不接大模型 · 无必中与额外伤害</small></div></div>`;
 
+  // 战斗道具箱格子用原版武器图标（assets/weapon-<weaponId>.png），
+  // 与 RoomPlayerItem / WeaponInfo 的武器展示语义一致；文字保留在 title 与底部小字。
+  // 翻牌奖励等特殊武器（如 hq_brick）没有对应图标，只显示文字，避免 404。
   $('ddtWeaponList').innerHTML = `
     <div class="ddt-label">房间内选择武器</div>
     <div class="ddt-weapon-row">${room.weapons.map((w) => `
       <button class="ddt-weapon ${w.equipped ? 'is-active' : ''}" type="button"
               data-action="weapon" data-weapon="${esc(w.id)}" title="${esc(w.label)} 强化 +${w.level}">
-        ${esc(w.label)}<small>+${w.level}</small></button>`).join('')}</div>`;
+        ${ROOM_WEAPON_ICONS.has(w.weaponId) ? `<img src="assets/weapon-${esc(w.weaponId)}.png?v=35" alt="">` : ''}
+        <span>${esc(w.label)}</span><small>+${w.level}</small></button>`).join('')}</div>`;
 
   const continueBtn = state.layer.querySelector('[data-action="continue-cards"]');
   if (continueBtn) {
@@ -250,6 +369,15 @@ function renderRoom(room) {
   $('ddtStatus').textContent = room.status === 'result' && room.pendingReward
     ? '上一局奖励尚未翻完，回房间后可继续领取'
     : `当前地图：${esc(room.mapName)} · ${room.maps.length} 张可选`;
+
+  // 房间信息面板（对应原版 smallMapInfoPanel 的地图预览 / 名称 / 10 秒出手时间）。
+  const currentMap = room.maps.find((m) => m.id === room.mapId);
+  const thumb = $('roomMapThumb');
+  if (thumb && currentMap?.thumb) thumb.src = `${currentMap.thumb}?v=35`;
+  const mapName = $('roomMapName');
+  if (mapName) mapName.textContent = currentMap?.name || room.mapName || '随机地图';
+  const mapTrait = $('roomMapTrait');
+  if (mapTrait) mapTrait.textContent = currentMap?.trait || room.mapName || '';
 }
 
 /**
@@ -410,6 +538,20 @@ async function onLayerClick(event) {
   if (!target) return;
   const action = target.dataset.action;
   try {
+    if (action === 'room-tip') {
+      setStatus(target.dataset.tip || '服务端单机版暂未接入该功能');
+      return;
+    }
+    if (action === 'toggle-map-picker') {
+      const picker = $('roomMapPicker');
+      if (picker) picker.hidden = !picker.hidden;
+      return;
+    }
+    if (action === 'close-map-picker') {
+      const picker = $('roomMapPicker');
+      if (picker) picker.hidden = true;
+      return;
+    }
     if (action === 'map') {
       const mapId = target.dataset.map;
       await dataApi.setMap(mapId);
@@ -573,10 +715,13 @@ async function startBattle(button) {
 function showLayer() {
   if (!state.layer) return;
   state.layer.hidden = false;
+  state.layer.classList.add('room-mode');
   $('ddtForge').hidden = true;
   $('ddtRoom').hidden = false;
+  $('roomMapPicker').hidden = true;
   state.forgeOpen = false;
-  // 原版 BaseRoomState.as: playMusic("065")。
+  fitRoom();
+  // 原版 BaseRoomState.as: playMusic("065") → dist/assets/audio/bgm-room-065.mp3。
   window.__GUNNY_HOOKS__?.audioScene?.('room');
 }
 
